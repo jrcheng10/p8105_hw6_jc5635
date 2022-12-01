@@ -10,3 +10,29 @@ library(tidyverse)
 library(modelr)
 library(mgcv)
 ```
+
+## Problem 2
+
+```{r hm_tidy, message = FALSE, show_col_types = FALSE}
+homicides = read_csv("data/homicide-data.csv") %>%
+  mutate(city_state = str_c(city, ", ", state),
+         sol_hm = ifelse(disposition == "Closed by arrest", TRUE, FALSE),
+         victim_age = as.numeric(victim_age)
+         ) %>%
+  filter(!(city_state %in% c("Dallas, TX", "Phoenix, AZ", "Kansas City, MO", "Tulsa, AL")), 
+         victim_race %in% c("Black", "White")) %>%
+  relocate(city_state, .after = state)
+```
+
+```{r hm_glm_balt}
+
+```
+
+```{r hm_glm_all_cities}
+
+```
+
+```{r hm_plot}
+
+```
+
