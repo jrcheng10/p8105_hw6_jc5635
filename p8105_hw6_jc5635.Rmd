@@ -17,7 +17,9 @@ library(mgcv)
 homicides = read_csv("data/homicide-data.csv") %>%
   mutate(city_state = str_c(city, ", ", state),
          sol_hm = ifelse(disposition == "Closed by arrest", TRUE, FALSE),
-         victim_age = as.numeric(victim_age)
+         victim_age = as.numeric(victim_age),
+         victim_race = as.factor(victim_race),
+         victim_sex = as.factor(victim_sex)
          ) %>%
   filter(!(city_state %in% c("Dallas, TX", "Phoenix, AZ", "Kansas City, MO", "Tulsa, AL")), 
          victim_race %in% c("Black", "White")) %>%
@@ -25,23 +27,45 @@ homicides = read_csv("data/homicide-data.csv") %>%
 ```
 
 ```{r hm_glm_balt}
+balt_hm = homicides %>%
+  filter(city_state == "Baltimore, MD") %>%
+  mutate(victim_race = fct_relevel(victim_race, "White")) %>%
+  select(sol_hm, victim_age, victim_race, victim_sex)
 
+balt_fit_logistic = balt_hm %>%
+  glm(sol_hm ~ victim_age + victim_race + victim_sex, data = ., family = binomial())
+
+balt_fit_logistic %>% 
+  broom::tidy() %>% 
+  mutate(or = exp(estimate)) %>%
+  select(term, log_or = estimate, or, p.value) %>% 
+  knitr::kable(digits = 3)
 ```
 
 ```{r hm_glm_all_cities}
 
 ```
 
-```{r hm_plot}
+```{r hm_plot_or_ci}
 
 ```
-
 
 ## Problem 3
 
 ```{r bw_tidy}
-birthweights = read_csv("data/birthweight.csv")
-
-birthweights %>%
+birthweights = read_csv("data/birthweight.csv") %>%
   skimr::skim()
 ```
+
+```{r bw_reg}
+
+```
+
+```{r bw_plot_resid}
+
+```
+
+```{r bw_comp}
+
+```
+
