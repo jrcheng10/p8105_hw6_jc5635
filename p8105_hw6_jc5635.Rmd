@@ -36,3 +36,12 @@ homicides = read_csv("data/homicide-data.csv") %>%
 
 ```
 
+
+## Problem 3
+
+```{r bw_tidy}
+birthweights = read_csv("data/birthweight.csv")
+
+birthweights %>%
+  skimr::skim()
+```
