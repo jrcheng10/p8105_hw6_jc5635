@@ -133,7 +133,7 @@ birthweights %>%
   skimr::skim()
 ```
 
-We propose a regression model (i.e. `mod_a`) with the following predictors that are hypothesized to be associated with birthweight (i.e. `bwt`): weight of the mother at delivery (i.e. `delwt`), family income (i.e. `fincome`), gestational age (i.e. `gaweeks`), existence of malformations (i.e. `malform`), age of the mother at delivery (i.e. `momage`), and average daily count of cigarettes consumed during pregnancy (i.e. `smoken`).
+We propose and report results for an estimated regression model (i.e. `mod_a`) with the following predictors that are hypothesized to be associated with birthweight (i.e. `bwt`): weight of the mother at delivery (i.e. `delwt`), family income (i.e. `fincome`), gestational age (i.e. `gaweeks`), existence of malformations (i.e. `malform`), age of the mother at delivery (i.e. `momage`), and average daily count of cigarettes consumed during pregnancy (i.e. `smoken`).
 
 ```{r bw_reg}
 mod_a = lm(bwt ~ delwt + fincome + gaweeks + malform + momage + smoken, data = birthweights)
@@ -176,6 +176,8 @@ cv_df = cv_df %>%
     rmse_mod_b = map2_dbl(mod_b, test, ~rmse(model = .x, data = .y)),
     rmse_mod_c = map2_dbl(mod_c, test, ~rmse(model = .x, data = .y)))
 ```
+
+Lastly, we plot the root mean squared errors (RMSEs) for the three models. We find that the performance of the proposed `mod_a` lags far behind that of `mod_b` and `mod_c`, and conclude that `mod_c` is the best model of the three in terms of predictive value.
 
 ```{r bw_comp_plot, fig.width = 9, fig.asp = 0.6}
 cv_df %>% 
