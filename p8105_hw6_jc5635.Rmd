@@ -68,7 +68,7 @@ homicides = read_csv("data/homicide-data.csv") %>%
   relocate(city_state, .after = state)
 ```
 
-We proceed to fit a logistic regression model, with case resolution status (i.e. `sol_hm`, a binary variable) as the outcome, and `victim_age`, `victim_race`, and `victim_sex` as the independent variables. We then report the adjusted odds ratio and corresponding confidence interval for the effect of being a female victim, versus male victims, on likelihood of case resolution, holding other predictors constant.
+We proceed to fit a logistic regression model, with case resolution (i.e. `sol_hm`, a binary variable) as the outcome, and `victim_age`, `victim_race`, and `victim_sex` as the independent variables. We then report the adjusted odds ratio and corresponding confidence interval for the effect of being a female victim, versus being a male victim, on the likelihood of the case being solved, holding other predictors constant.
 
 ```{r hm_glm_balt}
 balt_fit_logistic = homicides %>%
@@ -85,7 +85,7 @@ balt_fit_logistic %>%
   knitr::kable(digits = 3)
 ```
 
-We fit logistic regression models for each city and then again report the estimated odds ratio and corresponding confidence intervals for the effect of being a female victim on the probability of case resolution, accounting for other predictors specified.
+We fit logistic regression models for each city and then again report the estimated odds ratios and corresponding confidence intervals for the effect of victim sex on the probability of the homicide being solved, accounting for other predictors specified.
 
 ```{r hm_glm_all_cities}
 cities_log_reg = homicides %>%
@@ -101,7 +101,7 @@ cities_log_reg = homicides %>%
   select(c(1:2, 9:11))
 ```
 
-Finally, we plot estimated odds ratios and confidence intervals by city, in ascending order of ORs. Among 47 cities, New York, NY has the highest odds ratio for the effect of being a female victim on likelihood of the homicide being solved, while New York; Long Beach, CA; and San Bernardino, CA, have the largest confidence intervals for their corresponding ORs. 
+Finally, we plot estimated odds ratios and confidence intervals by city, in ascending order of ORs. Among 47 cities, New York, NY, has the highest odds ratio for the effect of being a female victim on the likelihood of the homicide being solved, while New York, NY; Long Beach, CA; and San Bernardino, CA, have the largest confidence intervals for their corresponding ORs. 
 
 ```{r hm_plot_or_ci, fig.width = 9, fig.asp = 0.6}
 cities_log_reg %>% 
@@ -109,7 +109,7 @@ cities_log_reg %>%
   ggplot(aes(x = city_state, y = or, color = city_state)) +
   geom_point() +
   geom_errorbar(aes(ymin = conf_low, ymax = conf_high)) +
-  labs(title = "Estimated adjusted odds ratios and confidence intervals for solved homicides, female versus male victims, by city",
+  labs(title = "Estimated adjusted odds ratios and confidence intervals for solving homicides, female versus male victims, by city",
        x = "City",
        y = "Estimated odds ratios (with confidence intervals)") +
   theme(legend.position = "none",
@@ -133,7 +133,7 @@ birthweights %>%
   skimr::skim()
 ```
 
-We propose and report results for an estimated regression model (i.e. `mod_a`) with the following predictors that are hypothesized to be associated with birthweight (i.e. `bwt`): weight of the mother at delivery (i.e. `delwt`), family income (i.e. `fincome`), gestational age (i.e. `gaweeks`), existence of malformations (i.e. `malform`), age of the mother at delivery (i.e. `momage`), and average daily count of cigarettes consumed during pregnancy (i.e. `smoken`).
+We propose and report results for an estimated regression model (i.e. `mod_a`) with the following predictors that are hypothesized to influence birthweight (i.e. `bwt`): weight of the mother at delivery (i.e. `delwt`), family income (i.e. `fincome`), gestational age (i.e. `gaweeks`), existence of malformations (i.e. `malform`), age of the mother at delivery (i.e. `momage`), and average daily count of cigarettes consumed during pregnancy (i.e. `smoken`).
 
 ```{r bw_reg}
 mod_a = lm(bwt ~ delwt + fincome + gaweeks + malform + momage + smoken, data = birthweights)
@@ -145,7 +145,7 @@ mod_a %>%
 
 We proceed in our modeling process by plotting residuals versus predicted values for `mod_a`. 
 
-```{r bw_plot_resid}
+```{r bw_plot_resid, fig.width = 9, fig.asp = 0.6}
 birthweights %>% 
   add_residuals(mod_a, "resid") %>% 
   add_predictions(mod_a, "fitted") %>% 
@@ -156,7 +156,7 @@ birthweights %>%
        y = "Residuals")
 ```
 
-Next, we use cross-validation to compare the predictive performance of `mod_a` with two alternative models: `mod_b`, which regresses birthweight on length of the baby at birth (i.e. `blength`) and gestational age; and `mod_c`, which regresses birthweight on head circumference of the baby at birth (i.e. `bhead`), length of the baby at birth, sex of the baby (i.e. `babysex`), and interactions.
+Next, we use cross-validation to compare the predictive performance of `mod_a` with that of two alternative models: `mod_b`, which regresses birthweight on length of the baby at birth (i.e. `blength`) and gestational age; and `mod_c`, which regresses birthweight on head circumference of the baby at birth (i.e. `bhead`), length of the baby at birth, sex of the baby (i.e. `babysex`), and interactions.
 
 ```{r bw_comp_cv}
 cv_df = crossv_mc(birthweights, 100) %>% 
