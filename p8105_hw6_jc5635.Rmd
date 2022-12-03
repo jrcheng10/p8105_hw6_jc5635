@@ -13,59 +13,113 @@ library(mgcv)
 
 ## Problem 2
 
-```{r hm_tidy, message = FALSE, show_col_types = FALSE}
+```{r hm_tidy, warning = FALSE, message = FALSE, show_col_types = FALSE}
 homicides = read_csv("data/homicide-data.csv") %>%
   mutate(city_state = str_c(city, ", ", state),
-         sol_hm = ifelse(disposition == "Closed by arrest", TRUE, FALSE),
+         sol_hm = as.numeric(disposition == "Closed by arrest"),
          victim_age = as.numeric(victim_age),
-         victim_race = as.factor(victim_race),
-         victim_sex = as.factor(victim_sex)
-         ) %>%
+         victim_race = fct_relevel(as.factor(victim_race), "White"),
+         victim_sex = fct_relevel(as.factor(victim_sex), "Male")) %>%
   filter(!(city_state %in% c("Dallas, TX", "Phoenix, AZ", "Kansas City, MO", "Tulsa, AL")), 
-         victim_race %in% c("Black", "White")) %>%
+         victim_race %in% c("Black", "White"),
+         victim_sex != "Unknown") %>%
   relocate(city_state, .after = state)
 ```
 
 ```{r hm_glm_balt}
-balt_hm = homicides %>%
+balt_fit_logistic = homicides %>%
   filter(city_state == "Baltimore, MD") %>%
-  mutate(victim_race = fct_relevel(victim_race, "White")) %>%
-  select(sol_hm, victim_age, victim_race, victim_sex)
-
-balt_fit_logistic = balt_hm %>%
   glm(sol_hm ~ victim_age + victim_race + victim_sex, data = ., family = binomial())
 
 balt_fit_logistic %>% 
-  broom::tidy() %>% 
-  mutate(or = exp(estimate)) %>%
-  select(term, log_or = estimate, or, p.value) %>% 
+  broom::tidy(conf.int = TRUE) %>% 
+  mutate(or = exp(estimate),
+         conf_low = exp(conf.low),
+         conf_high = exp(conf.high)) %>%
+  filter(term == "victim_sexFemale") %>%
+  select(c(1, 8:10)) %>% 
   knitr::kable(digits = 3)
 ```
 
 ```{r hm_glm_all_cities}
-
+cities_log_reg = homicides %>%
+  nest(data = -city_state) %>%
+  mutate(models = map(data, ~glm(sol_hm ~ victim_age + victim_race + victim_sex, data = ., family = binomial())),
+         results = map(models, broom::tidy, conf.int = TRUE)) %>%
+  select(-data, -models) %>%
+  unnest(results) %>%
+  mutate(or = exp(estimate),
+         conf_low = exp(conf.low),
+         conf_high = exp(conf.high)
+         ) %>%
+  filter(term == "victim_sexFemale") %>%
+  select(c(1:2, 9:11))
 ```
 
-```{r hm_plot_or_ci}
-
+```{r hm_plot_or_ci, fig.width = 9, fig.asp = 0.6}
+cities_log_reg %>% 
+  mutate(city_state = fct_reorder(city_state, or)) %>%
+  ggplot(aes(x = city_state, y = or, color = city_state)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = conf_low, ymax = conf_high)) +
+  labs(title = "Estimated adjusted odds ratios and confidence intervals for solved homicides, male versus female victims, by city",
+       x = "City",
+       y = "Estimated odds ratios (with confidence intervals)"
+  ) +
+  theme(legend.position = "none",
+        plot.title = element_text(size = 11),
+        axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 ## Problem 3
 
-```{r bw_tidy}
+```{r bw_tidy, message = FALSE, show_col_types = FALSE}
 birthweights = read_csv("data/birthweight.csv") %>%
+  mutate(babysex = recode_factor(babysex, "1" = "Male", "2" = "Female"),
+         frace = recode_factor(frace, "1" = "White", "2" = "Black", "3" = "Asian", "4" = "Puerto Rican", "8" = "Other"),
+         mrace = recode_factor(mrace, "1" = "White", "2" = "Black", "3" = "Asian", "4" = "Puerto Rican", "8" = "Other"),
+         malform = recode_factor(malform, "0" = "absent", "1" = "present"),
+         fincome = fincome * 100)
+
+birthweights %>%
   skimr::skim()
 ```
 
 ```{r bw_reg}
+mod_a = lm(bwt ~ delwt + fincome + gaweeks + malform + momage + mrace + smoken, data = birthweights)
 
+mod_a %>%
+  broom::tidy()
 ```
 
 ```{r bw_plot_resid}
-
+modelr::add_residuals(birthweights, mod_a)
+modelr::add_predictions(birthweights, mod_a)
 ```
 
 ```{r bw_comp}
+cv_df = crossv_mc(birthweights, 100) %>% 
+  mutate(train = map(train, as_tibble),
+         test = map(test, as_tibble))
 
+cv_df = cv_df %>% 
+  mutate(mod_a = map(train, ~lm(bwt ~ delwt + fincome + gaweeks + malform + momage + mrace + smoken, data = .x)),
+         mod_b = map(train, ~lm(bwt ~ blength + gaweeks, data = .x)),
+         mod_c = map(train, ~lm(bwt ~ bhead + blength + babysex + 
+                                      bhead * blength + 
+                                      blength * babysex +
+                                      bhead * babysex +
+                                      bhead * blength * babysex, 
+                               data = .x)),
+    rmse_mod_a = map2_dbl(mod_a, test, ~rmse(model = .x, data = .y)),
+    rmse_mod_b = map2_dbl(mod_b, test, ~rmse(model = .x, data = .y)),
+    rmse_mod_c = map2_dbl(mod_c, test, ~rmse(model = .x, data = .y)))
 ```
 
+```{r bw_comp_plot}
+cv_df %>% 
+  select(c(7:9)) %>% 
+  pivot_longer(everything(), names_to = "model", values_to = "rmse", names_prefix = "rmse_") %>% 
+  mutate(model = fct_inorder(model)) %>% 
+  ggplot(aes(x = model, y = rmse)) + geom_violin()
+```
