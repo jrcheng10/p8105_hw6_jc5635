@@ -119,6 +119,8 @@ cities_log_reg %>%
 
 ## Problem 3
 
+We import, tidy, and check for missing values in `birthweights` data.
+
 ```{r bw_tidy, message = FALSE, show_col_types = FALSE}
 birthweights = read_csv("data/birthweight.csv") %>%
   mutate(babysex = as.factor(babysex),
@@ -131,6 +133,8 @@ birthweights %>%
   skimr::skim()
 ```
 
+We propose a regression model (i.e. `mod_a`) with the following predictors that are hypothesized to be associated with birthweight (i.e. `bwt`): weight of the mother at delivery (i.e. `delwt`), family income (i.e. `fincome`), gestational age (i.e. `gaweeks`), existence of malformations (i.e. `malform`), age of the mother at delivery (i.e. `momage`), and average daily count of cigarettes consumed during pregnancy (i.e. `smoken`).
+
 ```{r bw_reg}
 mod_a = lm(bwt ~ delwt + fincome + gaweeks + malform + momage + smoken, data = birthweights)
 
@@ -139,16 +143,20 @@ mod_a %>%
   knitr::kable(digits = 3)
 ```
 
+We proceed in our modeling process by plotting residuals versus predicted values for `mod_a`. 
+
 ```{r bw_plot_resid}
 birthweights %>% 
   add_residuals(mod_a, "resid") %>% 
   add_predictions(mod_a, "fitted") %>% 
   ggplot(aes(x = fitted, y = resid)) + 
   geom_point() +
-  labs(title = "Residuals versus predicted values for birthweights regression model",
+  labs(title = "Residuals versus predicted values for mod_a",
        x = "Predicted values",
        y = "Residuals")
 ```
+
+Next, we use cross-validation to compare the predictive performance of `mod_a` with two alternative models: `mod_b`, which regresses birthweight on length of the baby at birth (i.e. `blength`) and gestational age; and `mod_c`, which regresses birthweight on head circumference of the baby at birth (i.e. `bhead`), length of the baby at birth, sex of the baby (i.e. `babysex`), and interactions.
 
 ```{r bw_comp_cv}
 cv_df = crossv_mc(birthweights, 100) %>% 
@@ -174,5 +182,8 @@ cv_df %>%
   select(c(7:9)) %>% 
   pivot_longer(everything(), names_to = "model", values_to = "rmse", names_prefix = "rmse_") %>% 
   mutate(model = fct_inorder(model)) %>% 
-  ggplot(aes(x = model, y = rmse)) + geom_violin()
+  ggplot(aes(x = model, y = rmse)) + geom_violin() +
+  labs(title = "Predictive performance of regression models for birthweight",
+       x = "Model",
+       y = "Root mean squared error")
 ```
