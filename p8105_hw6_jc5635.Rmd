@@ -14,7 +14,7 @@ library(p8105.datasets)
 
 ## Problem 1
 
-(Adapted solution for Problem 1 is included below.)
+Adapted solution for Problem 1 included below.
 
 ```{r weather_tidy, cache = TRUE}
 weather_df = rnoaa::meteo_pull_monitors(
@@ -90,8 +90,7 @@ cities_log_reg = homicides %>%
   unnest(results) %>%
   mutate(or = exp(estimate),
          conf_low = exp(conf.low),
-         conf_high = exp(conf.high)
-         ) %>%
+         conf_high = exp(conf.high)) %>%
   filter(term == "victim_sexFemale") %>%
   select(c(1:2, 9:11))
 ```
@@ -102,10 +101,9 @@ cities_log_reg %>%
   ggplot(aes(x = city_state, y = or, color = city_state)) +
   geom_point() +
   geom_errorbar(aes(ymin = conf_low, ymax = conf_high)) +
-  labs(title = "Estimated adjusted odds ratios and confidence intervals for solved homicides, male versus female victims, by city",
+  labs(title = "Estimated adjusted odds ratios and confidence intervals for solved homicides, female versus male victims, by city",
        x = "City",
-       y = "Estimated odds ratios (with confidence intervals)"
-  ) +
+       y = "Estimated odds ratios (with confidence intervals)") +
   theme(legend.position = "none",
         plot.title = element_text(size = 11),
         axis.text.x = element_text(angle = 45, hjust = 1))
@@ -129,15 +127,22 @@ birthweights %>%
 mod_a = lm(bwt ~ delwt + fincome + gaweeks + malform + momage + mrace + smoken, data = birthweights)
 
 mod_a %>%
-  broom::tidy()
+  broom::tidy() %>%
+  knitr::kable(digits = 3)
 ```
 
 ```{r bw_plot_resid}
-modelr::add_residuals(birthweights, mod_a)
-modelr::add_predictions(birthweights, mod_a)
+birthweights %>% 
+  add_residuals(mod_a, "resid") %>% 
+  add_predictions(mod_a, "fitted") %>% 
+  ggplot(aes(x = fitted, y = resid)) + 
+  geom_point() +
+  labs(title = "Residuals versus predicted values for birthweights regression model",
+       x = "Predicted values",
+       y = "Residuals")
 ```
 
-```{r bw_comp}
+```{r bw_comp_cv}
 cv_df = crossv_mc(birthweights, 100) %>% 
   mutate(train = map(train, as_tibble),
          test = map(test, as_tibble))
