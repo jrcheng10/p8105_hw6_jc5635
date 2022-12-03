@@ -14,9 +14,9 @@ library(p8105.datasets)
 
 ## Problem 1
 
-Adapted solution for Problem 1 included below.
+(Adapted solution for Problem 1 included below.)
 
-```{r weather_tidy, cache = TRUE}
+```{r weather_tidy, message = FALSE, cache = TRUE}
 weather_df = rnoaa::meteo_pull_monitors(
     c("USW00094728"),
     var = c("PRCP", "TMIN", "TMAX"), 
@@ -113,10 +113,10 @@ cities_log_reg %>%
 
 ```{r bw_tidy, message = FALSE, show_col_types = FALSE}
 birthweights = read_csv("data/birthweight.csv") %>%
-  mutate(babysex = recode_factor(babysex, "1" = "Male", "2" = "Female"),
-         frace = recode_factor(frace, "1" = "White", "2" = "Black", "3" = "Asian", "4" = "Puerto Rican", "8" = "Other"),
-         mrace = recode_factor(mrace, "1" = "White", "2" = "Black", "3" = "Asian", "4" = "Puerto Rican", "8" = "Other"),
-         malform = recode_factor(malform, "0" = "absent", "1" = "present"),
+  mutate(babysex = as.factor(babysex),
+         frace = as.factor(frace),
+         mrace = as.factor(mrace),
+         malform = as.factor(malform),
          fincome = fincome * 100)
 
 birthweights %>%
@@ -124,7 +124,7 @@ birthweights %>%
 ```
 
 ```{r bw_reg}
-mod_a = lm(bwt ~ delwt + fincome + gaweeks + malform + momage + mrace + smoken, data = birthweights)
+mod_a = lm(bwt ~ delwt + fincome + gaweeks + malform + momage + smoken, data = birthweights)
 
 mod_a %>%
   broom::tidy() %>%
@@ -148,7 +148,7 @@ cv_df = crossv_mc(birthweights, 100) %>%
          test = map(test, as_tibble))
 
 cv_df = cv_df %>% 
-  mutate(mod_a = map(train, ~lm(bwt ~ delwt + fincome + gaweeks + malform + momage + mrace + smoken, data = .x)),
+  mutate(mod_a = map(train, ~lm(bwt ~ delwt + fincome + gaweeks + malform + momage + smoken, data = .x)),
          mod_b = map(train, ~lm(bwt ~ blength + gaweeks, data = .x)),
          mod_c = map(train, ~lm(bwt ~ bhead + blength + babysex + 
                                       bhead * blength + 
